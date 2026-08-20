@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Money Manager</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/icon-32.png">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<meta name="theme-color" content="#7F77DD">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<button class="fab" onclick="openGlobalExpenseModal()" aria-label="Añadir gasto">−</button>
+
+  <div class="tabbar">
+    <div class="tabbar-item active" data-tab="cuentas" onclick="switchTab('cuentas')"><span>💳</span>Cuentas</div>
+    <div class="tabbar-item" data-tab="ahorro" onclick="switchTab('ahorro')"><span>🐷</span>Ahorro</div>
+    <div class="tabbar-item" data-tab="analytics" onclick="switchTab('analytics')"><span>📊</span>Analytics</div>
+    <div class="tabbar-item" data-tab="historico" onclick="switchTab('historico')"><span>🕐</span>Histórico</div>
+  </div>
+
+<div class="app">
+  <!-- ===== CUENTAS ===== -->
+  <div class="view active" id="view-cuentas">
+    <div class="topbar">
+      <h1>Cuentas</h1>
+      <button class="btn btn-small" onclick="closeMonth()">Cerrar mes</button>
+    </div>
+
+    <div class="resumen-grid" id="resumen-grid"></div>
+
+    <div class="main-grid">
+    <div>
+    <div class="card balance-card">
+      <p class="label" id="balance-label">Saldo</p>
+      <p class="value" id="balance-value">0,00 €</p>
+      <div class="split-row" id="split-row" style="display:none;"></div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn" onclick="openIncomeModal()">+ Ingreso</button>
+      <button class="btn" onclick="openTransferModal()">⇄ Movimiento</button>
+    </div>
+
+    <div class="dropdown" id="income-dropdown" onclick="this.classList.toggle('open')">
+      <div class="teal-card-head">
+        <span style="font-size:13px; color:var(--teal-soft-text);">Ingresos del mes</span>
+        <span style="display:flex; align-items:center; gap:8px;">
+          <span style="font-weight:600; color:var(--teal-soft-text);" id="income-summary-value">0,00 €</span>
+          <span class="chevron">⌄</span>
+        </span>
+      </div>
+      <div class="dropdown-body" id="income-list"></div>
+    </div>
+
+    <div class="card budget-card dropdown" id="budget-card" style="display:none;" onclick="this.classList.toggle('open')">
+      <div class="budget-row">
+        <span>Presupuesto del mes</span>
+        <span style="display:flex; align-items:center; gap:8px;">
+          <span id="budget-text">0 € / 0 €</span>
+          <span class="chevron">⌄</span>
+        </span>
+      </div>
+      <div class="progress-track"><div class="progress-fill" id="budget-fill" style="width:0%;"></div></div>
+      <div class="dropdown-body" id="budget-breakdown" style="margin-top:10px;"></div>
+    </div>
+    <div class="card" id="split-spend-card" style="display:none;">
+      <p class="section-label" style="margin:0 0 8px;">Gasto por persona</p>
+      <div class="split-row" id="split-spend-row"></div>
+    </div>
+    </div>
+
+    <div>
+    <div class="dropdown" id="movements-dropdown" onclick="this.classList.toggle('open')">
+      <div class="dropdown-head"><span>Últimos movimientos</span><span class="chevron">⌄</span></div>
+      <div class="dropdown-body" id="movements-list"></div>
+    </div>
+
+    <div class="topbar" style="margin-bottom:8px;">
+      <span class="section-label" id="categories-label" style="margin:0;">Categorías</span>
+      <button class="btn btn-small" onclick="openCategoryModal()">+ Categoría</button>
+    </div>
+    <div id="categories-list"></div>
+
+    <div class="topbar" id="income-cat-header" style="margin:16px 0 8px;">
+      <span class="section-label" style="margin:0;">Categorías de ingreso</span>
+      <button class="btn btn-small" onclick="openIncomeCategoryModal()">+ Categoría</button>
+    </div>
+    <div id="income-categories-list"></div>
+    </div>
+    </div>
+
+  </div>
+
+  <!-- ===== AHORRO ===== -->
+  <div class="view" id="view-ahorro">
+    <div class="topbar">
+      <h1>Ahorro</h1>
+      <button class="btn btn-small" onclick="openGoalModal()">+ Meta</button>
+    </div>
+    <div class="card balance-card">
+      <p class="label">Ahorrado en total</p>
+      <p class="value" id="savings-total">0,00 €</p>
+    </div>
+    <div id="goals-list"></div>
+  </div>
+
+  <!-- ===== ANALYTICS ===== -->
+  <div class="view" id="view-analytics">
+    <div class="topbar"><h1>Analytics</h1></div>
+    <div class="pill-tabs" id="analytics-account-tabs"></div>
+
+    <div class="card">
+      <div class="pie-wrap">
+        <div class="pie" id="pie-chart"></div>
+        <div id="pie-legend"></div>
+      </div>
+    </div>
+
+    <div class="metric-grid" style="margin-bottom:10px;">
+      <div class="metric dropdown" id="avg-dropdown" onclick="this.classList.toggle('open')">
+        <p class="label">Promedio mensual <span class="chevron">⌄</span></p>
+        <p class="value" id="avg-total">0 €</p>
+        <div class="dropdown-body" id="avg-breakdown" style="margin-top:8px;"></div>
+      </div>
+      <div class="metric"><p class="label">Total anual</p><p class="value" id="year-total">0 €</p></div>
+      <div class="metric wide"><p class="label">Beneficio / pérdida (mes)</p><p class="value" id="month-profit">0 €</p></div>
+    </div>
+
+    <div class="card">
+      <div class="section-label">Gasto por categoría · mensual</div>
+      <canvas id="chart-monthly" height="180"></canvas>
+      <div id="chart-monthly-legend" style="margin-top:8px;"></div>
+    </div>
+    <div class="card">
+      <div class="section-label">Gasto por categoría · anual</div>
+      <canvas id="chart-annual" height="180"></canvas>
+      <div id="chart-annual-legend" style="margin-top:8px;"></div>
+    </div>
+  </div>
+
+  <!-- ===== HISTORICO ===== -->
+  <div class="view" id="view-historico">
+    <div class="topbar">
+      <h1>Histórico</h1>
+      <button class="btn btn-small" onclick="openManualMonthModal()">+ Mes pasado</button>
+    </div>
+    <div class="pill-tabs">
+      <div class="pill active" onclick="setHistView('mes', event)">Por mes</div>
+      <div class="pill" onclick="setHistView('anual', event)">Vista anual</div>
+    </div>
+    <div id="hist-mes-view"></div>
+    <div id="hist-anual-view" style="display:none;"></div>
+  </div>
+
+</div>
+
+<!-- ===== MODALES ===== -->
+<div class="overlay" id="modal-income">
+  <div class="sheet">
+    <h2>Añadir ingreso o aportación</h2>
+    <div class="field"><label>Cuenta</label><div class="card-select-grid" id="income-account-cards"></div></div>
+    <div class="field" id="income-type-field"><label>Tipo</label>
+      <div class="tag-row">
+        <div class="tag-option" data-value="aportacion" onclick="selectTag(this,'income-type')">Aportación</div>
+        <div class="tag-option selected" data-value="ingreso" onclick="selectTag(this,'income-type')">Ingreso real</div>
+      </div>
+    </div>
+    <div class="field" id="income-saving-field" style="display:none;"><label>Meta de ahorro</label><select id="income-saving-goal"></select></div>
+    <div class="field" id="income-category-field"><label>Categoría (opcional)</label><select id="income-category-select"></select></div>
+    <div class="field"><label>Descripción</label><input type="text" id="income-desc" placeholder="Nómina, regalo..."></div>
+    <div class="field"><label>Cantidad</label><input type="number" id="income-amount" placeholder="0,00"></div>
+    <div class="sheet-actions">
+      <button class="btn" onclick="closeModal('modal-income')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveIncome()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="modal-transfer">
+  <div class="sheet">
+    <h2>Movimiento entre cuentas</h2>
+    <div class="field"><label>Desde</label><div class="card-select-grid" id="transfer-from-cards"></div></div>
+    <div class="field" id="transfer-from-goal-field" style="display:none;"><label>Desde qué meta</label><select id="transfer-from-goal"></select></div>
+    <div class="field"><label>Hacia</label><div class="card-select-grid" id="transfer-to-cards"></div></div>
+    <div class="field" id="transfer-goal-field" style="display:none;"><label>Meta de ahorro</label><select id="transfer-goal"></select></div>
+    <div class="field"><label>Cantidad</label><input type="number" id="transfer-amount" placeholder="0,00"></div>
+    <div class="sheet-actions">
+      <button class="btn" onclick="closeModal('modal-transfer')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveTransfer()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="modal-category">
+  <div class="sheet">
+    <h2>Nueva categoría</h2>
+    <div class="field"><label>Nombre</label><input type="text" id="cat-name" placeholder="Vivienda"></div>
+    <div class="field"><label>Emoji (opcional)</label><input type="text" id="cat-emoji" placeholder="🏠" maxlength="2"></div>
+    <div class="field"><label>Presupuesto mensual</label><input type="number" id="cat-budget" placeholder="0,00"></div>
+    <div class="sheet-actions">
+      <button class="btn" onclick="closeModal('modal-category')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveCategory()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="modal-income-category">
+  <div class="sheet">
+    <h2>Nueva categoría de ingreso</h2>
+    <div class="field"><label>Nombre</label><input type="text" id="inccat-name" placeholder="Nómina"></div>
+    <div class="field"><label>Emoji (opcional)</label><input type="text" id="inccat-emoji" placeholder="💰" maxlength="2"></div>
+    <div class="sheet-actions">
+      <button class="btn" onclick="closeModal('modal-income-category')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveIncomeCategory()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="modal-expense">
+  <div class="sheet">
+    <h2 id="expense-title">Añadir gasto</h2>
+    <div class="field" id="expense-category-field" style="display:none;"><label>Categoría</label><select id="expense-category-select"></select></div>
+    <div class="field"><label>Descripción</label><input type="text" id="expense-desc" placeholder="Supermercado"></div>
+    <div class="field"><label>Cantidad</label><input type="number" id="expense-amount" placeholder="0,00"></div>
+    <div class="field" id="expense-who-field" style="display:none;"><label>Quién lo hizo</label>
+      <div class="tag-row">
+        <div class="tag-option selected" data-value="yo" onclick="selectTag(this,'expense-who')">Yo</div>
+        <div class="tag-option" data-value="ella" onclick="selectTag(this,'expense-who')">Ella</div>
+      </div>
+    </div>
+    <div class="field" id="expense-split-field" style="display:none;"><label>% que pagas tú de este gasto</label><input type="number" id="expense-split" min="0" max="100" placeholder="50"></div>
+    <div class="field field-checkbox"><input type="checkbox" id="expense-recurring" onclick="toggleRecurringFields()"><label for="expense-recurring" style="margin:0;">Gasto recurrente cada mes</label></div>
+    <div id="recurring-fields" style="display:none;">
+      <div class="field"><label>Día del mes</label><input type="number" id="expense-rec-day" min="1" max="31" placeholder="Ej. 5"></div>
+      <div class="field field-checkbox"><input type="checkbox" id="expense-rec-noend" checked onclick="toggleRecEnd()"><label for="expense-rec-noend" style="margin:0;">Sin fecha de fin</label></div>
+      <div class="field" id="rec-end-field" style="display:none;"><label>Fecha de fin</label><input type="date" id="expense-rec-end"></div>
+    </div>
+    <div class="sheet-actions">
+      <button class="btn" onclick="closeModal('modal-expense')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveExpense()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="modal-goal">
+  <div class="sheet">
+    <h2 id="goal-modal-title">Meta de ahorro</h2>
+    <div class="field"><label>Nombre</label><input type="text" id="goal-name" placeholder="Viaje a Japón"></div>
+    <div class="field"><label>Objetivo</label><input type="number" id="goal-target" placeholder="0,00"></div>
+    <div class="sheet-actions">
+      <button class="btn" onclick="closeModal('modal-goal')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveGoal()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="modal-goal-move">
+  <div class="sheet">
+    <h2 id="goal-move-title">Añadir a meta</h2>
+    <div class="field"><label>Cantidad</label><input type="number" id="goal-move-amount" placeholder="0,00"></div>
+    <div class="sheet-actions">
+      <button class="btn" onclick="closeModal('modal-goal-move')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveGoalMove()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="modal-interest">
+  <div class="sheet">
+    <h2>Editar tipo de interés</h2>
+    <div class="field"><label>TAE (%)</label><input type="number" id="interest-rate" step="0.01" placeholder="2,45"></div>
+    <div class="sheet-actions">
+      <button class="btn" onclick="closeModal('modal-interest')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveInterest()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="modal-edit-balance">
+  <div class="sheet">
+    <h2>Editar saldo</h2>
+    <div class="field"><label>Nuevo saldo (€)</label><input type="number" id="edit-balance-input" step="0.01"></div>
+    <div class="sheet-actions">
+      <button class="btn" onclick="closeModal('modal-edit-balance')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveEditBalance()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="modal-manual-month">
+  <div class="sheet">
+    <h2 id="manual-month-title">Añadir mes pasado</h2>
+    <div class="field"><label>Cuenta</label><div class="card-select-grid" id="manual-month-account-cards"></div></div>
+    <div class="field"><label>Mes</label><input type="month" id="manual-month-value"></div>
+    <div class="field"><label>Ingresos de ese mes</label><input type="number" id="manual-month-income" placeholder="0,00"></div>
+    <div id="manual-month-categories"></div>
+    <div class="sheet-actions">
+      <button class="btn" onclick="closeModal('modal-manual-month')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveManualMonth()">Guardar mes</button>
+    </div>
+  </div>
+</div>
+
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script src="firebase-config.js"></script>
+<script src="app.js"></script>
+<script>
+if ("serviceWorker" in navigator) { navigator.serviceWorker.register("sw.js"); }
+</script>
+</body>
+</html>
