@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Money Manager</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/icon-32.png">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<meta name="theme-color" content="#17142B">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div id="loading-overlay">
+  <div class="loading-box">
+    <div class="loading-spinner"></div>
+    <p>Cargando tus datos…</p>
+  </div>
+</div>
+
+<div class="tabbar">
+  <div class="tabbar-item active" data-tab="gastos" onclick="switchTab('gastos')"><span>💳</span>Gastos</div>
+  <div class="tabbar-item" data-tab="analytics" onclick="switchTab('analytics')"><span>📊</span>Analytics</div>
+  <div class="tabbar-item" data-tab="historico" onclick="switchTab('historico')"><span>🕐</span>Histórico</div>
+</div>
+
+<div class="app">
+
+  <!-- ===== GASTOS ===== -->
+  <div class="view active" id="view-gastos">
+    <div class="topbar"><h1>Gastos</h1></div>
+
+    <div class="metric-grid">
+      <div class="metric red"><p class="label">Gastos del mes</p><p class="value" id="summary-gastos">0,00 €</p></div>
+      <div class="metric" id="summary-balance-card"><p class="label">Balance ingresos − gastos</p><p class="value" id="summary-balance">0,00 €</p></div>
+    </div>
+
+    <div class="dropdown" id="movements-dropdown" onclick="this.classList.toggle('open')">
+      <div class="dropdown-head"><span>Últimos movimientos</span><span class="chevron">⌄</span></div>
+      <div class="dropdown-body" id="movements-list"></div>
+    </div>
+
+    <div class="topbar" style="margin-bottom:8px;">
+      <span class="section-label" style="margin:0;">Gastos</span>
+      <div style="display:flex; gap:6px;">
+        <button class="btn btn-small" onclick="openCategoryModal()">+ categoría</button>
+      </div>
+    </div>
+    <div id="categories-list"></div>
+
+    <div class="topbar" style="margin:16px 0 8px;">
+      <span class="section-label" style="margin:0;">Ingresos</span>
+      <button class="btn btn-small" onclick="openIncomeCategoryModal()">+ categoría</button>
+    </div>
+    <div id="income-categories-list"></div>
+
+    <div class="topbar" style="margin:16px 0 8px;">
+      <span class="section-label" style="margin:0;">Ahorros</span>
+      <button class="btn btn-small round-btn plus" onclick="openSavingModal()">+</button>
+    </div>
+    <div id="savings-list"></div>
+
+    <div class="card dropdown" id="budget-card" onclick="this.classList.toggle('open')" style="margin-top:16px;">
+      <p class="section-label" style="margin:0 0 8px;">Presupuesto del mes</p>
+      <div class="movement-row" style="border:none; padding:2px 0;"><span>Presupuesto total</span><span id="budget-total-text">0,00 €</span></div>
+      <div class="movement-row" style="border:none; padding:2px 0;"><span>Gastado</span><span id="budget-spent-text">0,00 €</span></div>
+      <div class="progress-track" style="margin:8px 0;"><div class="progress-fill" id="budget-fill" style="width:0%;"></div></div>
+      <div class="movement-row" style="border:none; padding:2px 0;">
+        <span id="budget-pct-text">0% usado</span>
+        <span id="budget-remaining-text" style="color:var(--lilac-strong-text-2); font-weight:500;">Te quedan 0,00 €</span>
+      </div>
+      <p style="text-align:center; font-size:12px; color:var(--lilac-strong-text-2); margin:8px 0 0;">Ver desglose por categoría <span class="chevron">⌄</span></p>
+      <div class="dropdown-body" id="budget-breakdown" style="margin-top:10px;"></div>
+    </div>
+  </div>
+
+  <!-- ===== ANALYTICS ===== -->
+  <div class="view" id="view-analytics">
+    <div class="topbar"><h1>Analytics</h1></div>
+
+    <p class="section-label">Mes en curso</p>
+    <div class="metric-grid-3" style="margin-bottom:14px;">
+      <div class="metric red"><p class="label">Gastos mes</p><p class="value" id="an-gastos-mes">0 €</p></div>
+      <div class="metric green"><p class="label">Ingresos mes</p><p class="value" id="an-ingresos-mes">0 €</p></div>
+      <div class="metric"><p class="label">Balance Ingresos − Gastos mes</p><p class="value" id="an-balance-mes">0 €</p></div>
+    </div>
+
+    <div class="metric-grid" style="margin-bottom:14px;">
+      <div class="metric red"><p class="label">Promedio total gastos mensuales</p><p class="value" id="an-avg-gastos">0 €</p></div>
+      <div class="metric green"><p class="label">Promedio total ingresos mensuales</p><p class="value" id="an-avg-ingresos">0 €</p></div>
+    </div>
+
+    <div class="card">
+      <p class="section-label">Gasto por categoría</p>
+      <div style="overflow-x:auto;">
+        <table class="cat-table" id="table-gasto-categoria">
+          <tr><th>Categoría</th><th>Prom. Mes</th><th>Total Año</th></tr>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <p class="section-label">Ingreso por categoría</p>
+      <div style="overflow-x:auto;">
+        <table class="cat-table" id="table-ingreso-categoria">
+          <tr><th>Categoría</th><th>Prom. Mes</th><th>Total Año</th></tr>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <p class="section-label">Gasto vs presupuesto</p>
+      <div id="gasto-vs-presupuesto"></div>
+    </div>
+  </div>
+
+  <!-- ===== HISTORICO ===== -->
+  <div class="view" id="view-historico">
+    <div class="topbar">
+      <h1>Historial</h1>
+      <button class="btn btn-small" onclick="openManualMonthModal()">+ mes pasado</button>
+    </div>
+
+    <div class="hist-nav">
+      <button class="btn btn-small" onclick="changeHistYear(-1)">‹</button>
+      <span class="hist-label" id="hist-year-label">2026</span>
+      <button class="btn btn-small" onclick="changeHistYear(1)">›</button>
+    </div>
+    <div class="hist-nav">
+      <button class="btn btn-small" onclick="changeHistMonth(-1)">‹</button>
+      <span class="hist-label" id="hist-month-label">Enero</span>
+      <button class="btn btn-small" onclick="changeHistMonth(1)">›</button>
+    </div>
+
+    <div id="hist-content"></div>
+  </div>
+
+</div>
+
+<button class="fab" onclick="openGlobalExpenseModal()" aria-label="Añadir gasto">−</button>
+
+<!-- ===== MODALES ===== -->
+<div class="overlay" id="modal-expense">
+  <div class="sheet">
+    <h2 id="expense-title">Añadir gasto</h2>
+    <div class="field" id="expense-category-field" style="display:none;"><label>Categoría</label><select id="expense-category-select"></select></div>
+    <div class="field"><label>Cantidad (€)</label><input type="number" id="expense-amount" placeholder="0,00"></div>
+    <div class="field"><label>Descripción (opcional)</label><input type="text" id="expense-desc" placeholder=""></div>
+    <div class="sheet-actions">
+      <button class="btn" onclick="closeModal('modal-expense')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveExpense()">Aceptar</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="modal-cat-income">
+  <div class="sheet">
+    <h2>Añadir ingreso a la categoría</h2>
+    <p class="hint-text">No cuenta en los ingresos totales, solo en el balance de esta categoría.</p>
+    <div class="field"><label>Cantidad (€)</label><input type="number" id="cat-income-amount" placeholder="0,00"></div>
+    <div class="field"><label>Descripción (opcional)</label><input type="text" id="cat-income-desc" placeholder=""></div>
+    <div class="sheet-actions">
+      <button class="btn" onclick="closeModal('modal-cat-income')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveCategoryIncome()">Aceptar</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="modal-income">
+  <div class="sheet">
+    <h2 id="income-title">Añadir ingreso</h2>
+    <div class="field" id="income-category-field"><label>Categoría</label><select id="income-category-select"></select></div>
+    <div class="field"><label>Cantidad (€)</label><input type="number" id="income-amount" placeholder="0,00"></div>
+    <div class="field"><label>Descripción (opcional)</label><input type="text" id="income-desc" placeholder=""></div>
+    <div class="sheet-actions">
+      <button class="btn" onclick="closeModal('modal-income')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveIncome()">Aceptar</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="modal-category">
+  <div class="sheet">
+    <h2 id="category-modal-title">Añadir Categoría</h2>
+    <div class="field"><label>Nombre</label><input type="text" id="cat-name" placeholder="Vivienda"></div>
+    <div class="field"><label>Presupuesto</label><input type="number" id="cat-budget" placeholder="0,00"></div>
+    <div class="field field-checkbox"><input type="checkbox" id="cat-include-global" checked><label for="cat-include-global" style="margin:0;">Incluir en presupuesto global</label></div>
+    <div class="sheet-actions">
+      <button class="btn" onclick="closeModal('modal-category')">Cancelar</button>
+      <button class="btn" id="category-delete-btn" style="display:none; background:#3A1B26; color:var(--pink-neg); border-color:#52212F;" onclick="deleteCategory()">Eliminar</button>
+      <button class="btn btn-primary" id="category-save-btn" onclick="saveCategory()">Crear</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="modal-income-category">
+  <div class="sheet">
+    <h2 id="income-category-modal-title">Añadir Categoría de ingreso</h2>
+    <div class="field"><label>Nombre</label><input type="text" id="inccat-name" placeholder="Sueldo"></div>
+    <div class="sheet-actions">
+      <button class="btn" onclick="closeModal('modal-income-category')">Cancelar</button>
+      <button class="btn" id="income-category-delete-btn" style="display:none; background:#3A1B26; color:var(--pink-neg); border-color:#52212F;" onclick="deleteIncomeCategory()">Eliminar</button>
+      <button class="btn btn-primary" id="income-category-save-btn" onclick="saveIncomeCategory()">Crear</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="modal-saving">
+  <div class="sheet">
+    <h2 id="saving-title">Añadir ahorro</h2>
+    <div class="field"><label>Cantidad (€)</label><input type="number" id="saving-amount" placeholder="0,00"></div>
+    <div class="field"><label>Descripción (opcional)</label><input type="text" id="saving-desc" placeholder=""></div>
+    <div class="sheet-actions">
+      <button class="btn" onclick="closeModal('modal-saving')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveSaving()">Aceptar</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="modal-manual-month">
+  <div class="sheet">
+    <h2 id="manual-month-title">Añadir mes pasado</h2>
+    <div class="field"><label>Mes</label><input type="month" id="manual-month-value"></div>
+    <p class="section-label" style="margin-top:10px;">Gastos por categoría</p>
+    <div id="manual-month-gastos"></div>
+    <p class="section-label" style="margin-top:10px;">Ingresos por categoría</p>
+    <div id="manual-month-ingresos"></div>
+    <div class="field" style="margin-top:10px;"><label>Ahorro total de ese mes</label><input type="number" id="manual-month-savings" placeholder="0,00"></div>
+    <div class="sheet-actions">
+      <button class="btn" onclick="closeModal('modal-manual-month')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveManualMonth()">Guardar mes</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script src="firebase-config.js"></script>
+<script src="app.js"></script>
+<script>
+if ("serviceWorker" in navigator) { navigator.serviceWorker.register("sw.js"); }
+</script>
+</body>
+</html>
